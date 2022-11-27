@@ -1,5 +1,4 @@
 import os
-import numpy as np
 import glob
 import json
 from flask import Flask, request, Response
