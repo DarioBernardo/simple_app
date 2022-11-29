@@ -25,7 +25,15 @@ steps:
   args:
   - 'push'
   - 'gcr.io/$PROJECT_ID/simple-app:$SHORT_SHA'
-  - 'gcr.io/$PROJECT_ID/simple-app:latest'
+
+- name: 'gcr.io/cloud-builders/gcloud'
+  id: adding the 'latest' tag for the image
+  args:
+    - container
+    - images
+    - add-tag
+    - gcr.io/$PROJECT_ID/simple-app:$SHORT_SHA
+    - gcr.io/$PROJECT_ID/simple-app:latest
 # [END cloudbuild]
 
 # [START cloudbuild-trigger-cd]
