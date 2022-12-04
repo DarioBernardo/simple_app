@@ -28,8 +28,7 @@ steps:
       - '--version=$SHORT_SHA'
       - '--namespace=$_K8S_NAMESPACE'
       - '--label=$_K8S_LABELS'
-      - '--annotation=$_K8S_ANNOTATIONS'
-      - '--gcb-build-id=$BUILD_ID'
+      - '--annotation=$_K8S_ANNOTATIONS,gcb-build-id=$BUILD_ID'
       - '--create-application-cr'
       - >-
         --links="Build
