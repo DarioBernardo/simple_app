@@ -1,74 +1,73 @@
-# [START cloudbuild]
 steps:
-# This step runs the unit tests on the app
-- name: 'python:3.7-slim'
-  id: Test
-  entrypoint: /bin/sh
-  args:
-  - -c
-  - 'pip install -r requirements.txt && python -m unittest discover'
-
-# This step builds the container image.
-- name: 'gcr.io/cloud-builders/docker'
-  id: Build
-  args:
-  - 'build'
-  - '-t'
-  - 'gcr.io/$PROJECT_ID/simple-app:$SHORT_SHA'
-  - '.'
-
-# This step pushes the image to Container Registry
-# The PROJECT_ID and SHORT_SHA variables are automatically
-# replaced by Cloud Build.
-- name: 'gcr.io/cloud-builders/docker'
-  id: Push
-  args:
-  - 'push'
-  - 'gcr.io/$PROJECT_ID/simple-app:$SHORT_SHA'
-
-- name: 'gcr.io/cloud-builders/gcloud'
-  id: adding the 'latest' tag for the image
-  args:
-    - container
-    - images
-    - add-tag
-    - gcr.io/$PROJECT_ID/simple-app:$SHORT_SHA
-    - gcr.io/$PROJECT_ID/simple-app:latest
-# [END cloudbuild]
-
-# [START cloudbuild-trigger-cd]
-# This step clones the cloud-infrastructure env repository
-#- name: 'gcr.io/cloud-builders/gcloud'
-#  id: Clone env repository
-#  entrypoint: /bin/sh
-#  args:
-#  - '-c'
-#  - |
-#    gcloud source repos clone git@github.com:DarioBernardo/cloud-infrastructure.git && \
-#    cd cloud-infrastructure && \
-#    git checkout candidate && \
-#    git config user.email $(gcloud auth list --filter=status:ACTIVE --format='value(account)')
-## This step generates the new manifest
-#- name: 'gcr.io/cloud-builders/gcloud'
-#  id: Generate manifest
-#  entrypoint: /bin/sh
-#  args:
-#  - '-c'
-#  - |
-#     sed "s/GOOGLE_CLOUD_PROJECT/${PROJECT_ID}/g" kubernetes.yaml.tpl | \
-#     sed "s/COMMIT_SHA/${SHORT_SHA}/g" > cloud-infrastructure/kubernetes.yaml
-## This step pushes the manifest back to cloud-infrastructure repo
-#- name: 'gcr.io/cloud-builders/gcloud'
-#  id: Push manifest
-#  entrypoint: /bin/sh
-#  args:
-#  - '-c'
-#  - |
-#    set -x && \
-#    cd cloud-infrastructure && \
-#    git add kubernetes.yaml && \
-#    git commit -m "Deploying image gcr.io/${PROJECT_ID}/simple-app:${SHORT_SHA}
-#    Built from commit ${COMMIT_SHA} of repository simple-app
-#    Author: $(git log --format='%an <%ae>' -n 1 HEAD)" && \
-#    git push origin candidate
-## [END cloudbuild-trigger-cd]
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - '-t'
+      - '$_IMAGE_NAME:$SHORT_SHA'
+      - .
+    id: Build
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - '$_IMAGE_NAME:$SHORT_SHA'
+    id: Push
+  - name: gcr.io/cloud-builders/gcloud
+    args:
+      - container
+      - images
+      - add-tag
+      - $_IMAGE_NAME:$SHORT_SHA
+      - $_IMAGE_NAME:latest
+    id: adding the 'latest' tag for the image
+  - name: gcr.io/cloud-builders/gke-deploy
+    args:
+      - prepare
+      - '--filename=$_K8S_YAML_PATH'
+      - '--image=$_IMAGE_NAME:$SHORT_SHA'
+      - '--app=$_K8S_APP_NAME'
+      - '--version=$SHORT_SHA'
+      - '--namespace=$_K8S_NAMESPACE'
+      - '--label=$_K8S_LABELS'
+      - '--annotation=$_K8S_ANNOTATIONS,gcb-build-id=$BUILD_ID'
+      - '--create-application-cr'
+      - >-
+        --links="Build
+        details=https://console.cloud.google.com/cloud-build/builds/$BUILD_ID?project=$PROJECT_ID"
+      - '--output=output'
+    id: Prepare deploy
+  - name: gcr.io/cloud-builders/gsutil
+    args:
+      - '-c'
+      - |-
+        if [ "$_OUTPUT_BUCKET_PATH" != "" ]
+        then
+          gsutil cp -r output/suggested gs://$_OUTPUT_BUCKET_PATH/config/$_K8S_APP_NAME/$BUILD_ID/suggested
+          gsutil cp -r output/expanded gs://$_OUTPUT_BUCKET_PATH/config/$_K8S_APP_NAME/$BUILD_ID/expanded
+        fi
+    id: Save configs
+    entrypoint: sh
+  - name: gcr.io/cloud-builders/gke-deploy
+    args:
+      - apply
+      - '--filename=output/expanded'
+      - '--cluster=$_GKE_CLUSTER'
+      - '--location=$_GKE_LOCATION'
+      - '--namespace=$_K8S_NAMESPACE'
+    id: Apply deploy
+images:
+  - '$_IMAGE_NAME:$SHORT_SHA'
+options:
+  substitutionOption: ALLOW_LOOSE
+substitutions:
+  _K8S_ANNOTATIONS: gcb-trigger-id=739d8e78-595c-45f8-96a7-536496685cb5
+  _K8S_LABELS: ''
+  _GKE_CLUSTER: gke-cluster-dev
+  _K8S_YAML_PATH: kubernetes/
+  _IMAGE_NAME: gcr.io/cube-render-farm/github.com/dariobernardo/simple_app
+  _GKE_LOCATION: europe-west3
+  _OUTPUT_BUCKET_PATH: cube-render-farm_cloudbuild/deploy
+  _K8S_APP_NAME: simple-app
+  _K8S_NAMESPACE: default
+tags:
+  - gcp-cloud-build-deploy
+  - $_K8S_APP_NAME
