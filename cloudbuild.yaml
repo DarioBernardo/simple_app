@@ -28,7 +28,7 @@ steps:
         --delivery-pipeline=my-gke-demo-app-1
         --region=$_GKE_LOCATION
         --source=./
-        --images=$_IMAGE_NAME:$SHORT_SHA
+        --images=_K8S_APP_NAME=$_IMAGE_NAME:$SHORT_SHA
 images:
   - '$_IMAGE_NAME:$SHORT_SHA'
 options:
