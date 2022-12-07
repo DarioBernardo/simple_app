@@ -26,6 +26,7 @@ steps:
       - >
         gcloud deploy releases create release-$BUILD_ID
         --delivery-pipeline=my-gke-demo-app-1
+        --project=$PROJECT_ID
         --region=$_GKE_LOCATION
         --source=./
         --images=_K8S_APP_NAME=$_IMAGE_NAME:$SHORT_SHA
