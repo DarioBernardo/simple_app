@@ -27,6 +27,6 @@ spec:
     spec:
       containers:
       - name: simple-app
-        image: gcr.io/cube-render-farm/github.com/dariobernardo/simple_app
+        image: gcr.io/cube-render-farm/simple_app
         ports:
         - containerPort: 8080
