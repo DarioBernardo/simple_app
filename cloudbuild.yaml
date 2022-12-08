@@ -25,25 +25,20 @@ steps:
       - '-c'
       - >
         gcloud deploy releases create release-$BUILD_ID
-        --delivery-pipeline=my-gke-demo-app-1
+        --delivery-pipeline=$_CLUSTER_NAME_PREFIX-deploy-pipeline
         --project=$PROJECT_ID
-        --region=$_GKE_LOCATION
+        --region=$_REGION
         --source=./
-        --images=_K8S_APP_NAME=$_IMAGE_NAME:$SHORT_SHA
+        --images=_APP_NAME=$_IMAGE_NAME:$SHORT_SHA
 images:
   - '$_IMAGE_NAME:$SHORT_SHA'
 options:
   substitutionOption: ALLOW_LOOSE
 substitutions:
-  _K8S_ANNOTATIONS: gcb-trigger-id=739d8e78-595c-45f8-96a7-536496685cb5
-  _K8S_LABELS: ''
-  _GKE_CLUSTER: gke-cluster-dev
-  _K8S_YAML_PATH: kubernetes/
-  _IMAGE_NAME: gcr.io/cube-render-farm/github.com/dariobernardo/simple_app
-  _GKE_LOCATION: europe-west3
-  _OUTPUT_BUCKET_PATH: cube-render-farm_cloudbuild/deploy
-  _K8S_APP_NAME: simple-app
-  _K8S_NAMESPACE: default
+  _IMAGE_NAME: europe-west3-docker.pkg.dev/$PROJECT_ID/simple_app/simple-app
+  _REGION: europe-west3
+  _APP_NAME: simple-app
+  _CLUSTER_NAME_PREFIX: gke-cluster
 tags:
   - gcp-cloud-build-deploy
   - $_K8S_APP_NAME
