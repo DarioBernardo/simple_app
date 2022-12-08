@@ -10,7 +10,7 @@ app = Flask(__name__)
 @app.route('/', methods=['POST', 'GET'])
 def home():
 
-    response = {'message': "OK"}
+    response = {'message': "IT WORKS!!!!"}
 
     return Response(response=json.dumps(response), status=200, mimetype="application/json")
 
