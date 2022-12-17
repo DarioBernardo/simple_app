@@ -25,7 +25,7 @@ steps:
       - '-c'
       - >
         gcloud deploy releases create release-$BUILD_ID
-        --delivery-pipeline=$_CLUSTER_NAME_PREFIX-deploy-pipeline
+        --delivery-pipeline=$_DELIVERY_PIPELINE_NAME
         --project=$PROJECT_ID
         --region=$_REGION
         --source=./
@@ -38,7 +38,7 @@ substitutions:
   _IMAGE_NAME: gcr.io/$PROJECT_ID/simple-app
   _REGION: europe-west3
   _APP_NAME: simple-app
-  _CLUSTER_NAME_PREFIX: gke-cluster
+  _DELIVERY_PIPELINE_NAME: gke-cluster-deploy-pipeline
 tags:
   - gcp-cloud-build-deploy
   - $_K8S_APP_NAME
