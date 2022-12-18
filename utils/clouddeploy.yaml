@@ -1,0 +1,21 @@
+#  gcloud deploy apply --file clouddeploy.yaml --region=europe-west3 --project=cube-render-farm
+#  gcloud deploy targets delete qsdev --region=europe-west3
+#  gcloud deploy delivery-pipelines delete gke-cluster-deploy-pipeline --force --region=europe-west3 --project=cube-render-farm
+apiVersion: deploy.cloud.google.com/v1
+kind: DeliveryPipeline
+metadata:
+ name: gke-cluster-deploy-pipeline
+description: main application pipeline
+serialPipeline:
+ stages:
+ - targetId: qsdev
+   profiles: []
+---
+
+apiVersion: deploy.cloud.google.com/v1
+kind: Target
+metadata:
+ name: qsdev
+description: development cluster
+gke:
+ cluster: projects/cube-render-farm/locations/europe-west3/clusters/gke-cluster-dev
